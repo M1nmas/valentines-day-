@@ -1,9 +1,10 @@
-import React, { useState, useEffect } from 'react';
+import React, { useRef, useState, useEffect } from 'react';
 import { Canvas } from '@react-three/fiber';
 import { PerspectiveCamera, OrbitControls, Stars, Sparkles } from '@react-three/drei';
 import { EffectComposer, Bloom } from '@react-three/postprocessing';
 import Heart from './components/Heart';
 import ScoreBoard from './components/ScoreBoard';
+import songUrl from './assets/Apna Bana Le (PenduJatt.Com.Se).mp3';
 import './App.css'; 
 
 const GAME_DURATION = 30; // seconds
@@ -13,6 +14,8 @@ export default function App() {
   const [score, setScore] = useState(0);
   const [timeLeft, setTimeLeft] = useState(GAME_DURATION);
   const [gameState, setGameState] = useState('start'); // start, playing, gameover
+  const [isPlaying, setIsPlaying] = useState(false);
+  const audioRef = useRef(null);
 
   useEffect(() => {
     let interval;
@@ -64,6 +67,23 @@ export default function App() {
     setGameState('playing');
   };
 
+  const toggleMusic = async () => {
+    const audio = audioRef.current;
+    if (!audio) return;
+
+    if (audio.paused) {
+      try {
+        await audio.play();
+        setIsPlaying(true);
+      } catch (error) {
+        setIsPlaying(false);
+      }
+    } else {
+      audio.pause();
+      setIsPlaying(false);
+    }
+  };
+
   return (
     <div className="app-container">
       <Canvas className="canvas" dpr={[1, 2]}>
@@ -100,6 +120,10 @@ export default function App() {
         <ScoreBoard score={score} timeLeft={timeLeft} />
       )}
 
+      <button className="music-toggle" type="button" onClick={toggleMusic}>
+        {isPlaying ? 'Pause Music' : 'Play Music'}
+      </button>
+
       {gameState === 'start' && (
         <div className="overlay">
           <h1 className="title">Neon<br/>Valentine</h1>
@@ -120,6 +144,8 @@ export default function App() {
           </button>
         </div>
       )}
+
+      <audio ref={audioRef} src={songUrl} loop preload="auto" />
     </div>
   );
 }
