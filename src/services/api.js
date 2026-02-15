@@ -1,4 +1,23 @@
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000';
+const API_URL = (import.meta.env.VITE_API_URL || window.location.origin).replace(/\/$/, '');
+
+const parseResponse = async (response) => {
+  if (response.status === 204) {
+    return null;
+  }
+
+  const contentType = response.headers.get('content-type') || '';
+  if (contentType.includes('application/json')) {
+    try {
+      return await response.json();
+    } catch (error) {
+      // Fallback to text parsing when content-type lies about JSON.
+    }
+  }
+
+  const text = await response.text();
+  // Avoid JSON parse errors when the server returns HTML or plain text.
+  return { message: text || response.statusText };
+};
 
 export const loginUser = async (username, password) => {
   try {
@@ -7,7 +26,7 @@ export const loginUser = async (username, password) => {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ username, password }),
     });
-    const data = await response.json();
+    const data = await parseResponse(response);
     if (!response.ok) throw new Error(data.message || 'Login failed');
     return data;
   } catch (error) {
@@ -22,7 +41,7 @@ export const registerUser = async (username, password) => {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ username, password }),
     });
-    const data = await response.json();
+    const data = await parseResponse(response);
     if (!response.ok) throw new Error(data.message || 'Registration failed');
     return data;
   } catch (error) {
@@ -33,7 +52,7 @@ export const registerUser = async (username, password) => {
 export const getLeaderboard = async () => {
   try {
     const response = await fetch(`${API_URL}/api/leaderboard/`);
-    const data = await response.json();
+    const data = await parseResponse(response);
     if (!response.ok) throw new Error('Failed to fetch leaderboard');
     return data;
   } catch (error) {
@@ -49,7 +68,7 @@ export const submitScore = async (username, score) => {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ username, score }),
     });
-    const data = await response.json();
+    const data = await parseResponse(response);
     if (!response.ok) throw new Error('Failed to submit score');
     return data;
   } catch (error) {
