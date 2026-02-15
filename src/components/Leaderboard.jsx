@@ -1,22 +1,8 @@
-import React, { useState, useEffect } from 'react';
-import { getLeaderboard } from '../services/api';
+import React from 'react';
+import { getLocalLeaderboard } from '../services/localLeaderboard';
 
-const Leaderboard = () => {
-  const [scores, setScores] = useState([]);
-
-  useEffect(() => {
-    const fetchScores = async () => {
-      try {
-        const data = await getLeaderboard();
-        setScores(data);
-      } catch (err) {
-        console.error('Failed to load leaderboard', err);
-      }
-    };
-    fetchScores();
-    const interval = setInterval(fetchScores, 5000); // Polling every 5 seconds for updates
-    return () => clearInterval(interval);
-  }, []);
+const Leaderboard = ({ entries }) => {
+  const scores = entries || getLocalLeaderboard();
 
   return (
     <div className="leaderboard" style={{ marginTop: '20px', padding: '20px', backgroundColor: 'rgba(0, 0, 0, 0.7)', borderRadius: '10px', border: '1px solid #00ffff' }}>

@@ -5,26 +5,19 @@ import { EffectComposer, Bloom } from '@react-three/postprocessing';
 import Heart from '../components/Heart';
 import ScoreBoard from '../components/ScoreBoard';
 import Leaderboard from '../components/Leaderboard';
-import { submitScore } from '../services/api';
-import { useAuth } from '../context/AuthContext';
+import { getStoredPlayerName, submitLocalScore } from '../services/localLeaderboard';
 import { useNavigate } from 'react-router-dom';
 
 const GAME_DURATION = 30; // seconds
 
 export default function GamePage() {
-  const { user } = useAuth();
   const navigate = useNavigate();
+  const [playerName] = useState(() => getStoredPlayerName());
   const [hearts, setHearts] = useState([]);
   const [score, setScore] = useState(0);
   const [timeLeft, setTimeLeft] = useState(GAME_DURATION);
   const [gameState, setGameState] = useState('start'); // start, playing, gameover
-
-  useEffect(() => {
-    // If not logged in, redirect home
-    if (!user) {
-        navigate('/');
-    }
-  }, [user, navigate]);
+  const [leaderboardEntries, setLeaderboardEntries] = useState([]);
 
   useEffect(() => {
     let interval;
@@ -43,10 +36,11 @@ export default function GamePage() {
   }, [gameState]);
 
   useEffect(() => {
-    if (gameState === 'gameover' && user) {
-      submitScore(user, score);
+    if (gameState === 'gameover') {
+      const updatedScores = submitLocalScore(playerName, score);
+      setLeaderboardEntries(updatedScores);
     }
-  }, [gameState, user, score]);
+  }, [gameState, playerName, score]);
 
   useEffect(() => {
     if (gameState === 'playing') {
@@ -81,8 +75,6 @@ export default function GamePage() {
     setHearts([]);
     setGameState('playing');
   };
-
-  if (!user) return null;
 
   return (
     <div className="game-container" style={{ width: '100%', height: 'calc(100vh - 60px)', position: 'relative' }}>
@@ -122,7 +114,7 @@ export default function GamePage() {
 
         {gameState === 'start' && (
         <div className="overlay">
-            <h1 className="title">Get Ready,<br/>{user}!</h1>
+          <h1 className="title">Get Ready,<br/>{playerName}!</h1>
             <p className="subtitle">Catch the glowing hearts before time runs out</p>
             <button className="start-button" onClick={startGame}>
             Start Game
@@ -135,7 +127,7 @@ export default function GamePage() {
             <h1 className="title">Time's Up!</h1>
             <p className="score-text">{score}</p>
             <p className="subtitle" style={{ fontSize: '1.2rem', color: '#ff69b4' }}>Hearts Collected</p>
-            <Leaderboard />
+            <Leaderboard entries={leaderboardEntries} />
             <div style={{ display: 'flex', gap: '20px', marginTop: '20px' }}>
                 <button className="start-button" onClick={startGame}>
                 Play Again
