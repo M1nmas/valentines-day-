@@ -6,15 +6,16 @@ const parseResponse = async (response) => {
   }
 
   const contentType = response.headers.get('content-type') || '';
-  if (contentType.includes('application/json')) {
+  const text = await response.text();
+
+  if (contentType.includes('application/json') && text) {
     try {
-      return await response.json();
+      return JSON.parse(text);
     } catch (error) {
       // Fallback to text parsing when content-type lies about JSON.
     }
   }
 
-  const text = await response.text();
   // Avoid JSON parse errors when the server returns HTML or plain text.
   return { message: text || response.statusText };
 };
